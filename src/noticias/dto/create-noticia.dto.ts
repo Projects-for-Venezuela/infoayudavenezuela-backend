@@ -5,13 +5,13 @@ export class CreateNoticiaDto {
   @IsNotEmpty({ message: 'El título es obligatorio.' })
   @MinLength(5, { message: 'El título debe tener al menos 5 caracteres.' })
   @MaxLength(300, { message: 'El título no puede exceder 300 caracteres.' })
-  titulo: string;
+  titulo!: string;
 
   @IsString({ message: 'La descripción debe ser una cadena de texto.' })
   @IsNotEmpty({ message: 'La descripción es obligatoria.' })
   @MinLength(10, { message: 'La descripción debe tener al menos 10 caracteres.' })
   @MaxLength(5000, { message: 'La descripción no puede exceder 5000 caracteres.' })
-  descripcion: string;
+  descripcion!: string;
 
   @IsOptional()
   @IsString({ message: 'La fuente debe ser una cadena de texto.' })
