@@ -5,7 +5,7 @@ import { PaginationHelper } from '~/common/pagination/pagination';
 import { ResponseHelper } from '~/common/response/response.helper';
 import { CreateNecesidadeDto } from './dto/create-necesidade.dto';
 import { UpdateNecesidadeDto } from './dto/update-necesidade.dto';
-import { ESTADOS_NECESIDADES, PaginationNecesidadeDto } from './dto/pagination-necesidade.dto';
+import { CIUDADES_NECESIDADES, PaginationNecesidadeDto } from './dto/pagination-necesidade.dto';
 
 @Injectable()
 export class NecesidadesService {
@@ -16,10 +16,10 @@ export class NecesidadesService {
     ciudades: { select: { id: true, nombre: true } },
   } satisfies Prisma.necesidades_urgentesInclude;
 
-  async selectEstado() {
-    return this.databaseService.estados.findMany({
-      where: { nombre: { in: [...ESTADOS_NECESIDADES] } },
-      select: { id: true, nombre: true },
+  async selectCiudad() {
+    return this.databaseService.ciudades.findMany({
+      where: { nombre: { in: [...CIUDADES_NECESIDADES] } },
+      select: { id: true, nombre: true, estados: { select: { id: true, nombre: true } } },
       orderBy: { nombre: 'asc' },
     });
   }
@@ -80,7 +80,11 @@ export class NecesidadesService {
 
   /** Servicio independiente: marca una necesidad como verificada (verificado = true). */
   async verificar(id: string) {
-    await this.findOne(id);
+    const necesidad = await this.findOne(id);
+
+    if (necesidad.verificado) {
+      throw new BadRequestException('La necesidad ya está verificada');
+    }
 
     return this.databaseService.necesidades_urgentes.update({
       where: { id },
@@ -104,12 +108,12 @@ export class NecesidadesService {
   ) {
     const page = paginationDto.page ?? 1;
     const limit = paginationDto.limit ?? 20;
-    const { search, state } = paginationDto;
+    const { search, city } = paginationDto;
 
     const where: Prisma.necesidades_urgentesWhereInput = {
       ...extraWhere,
-      ...(state && {
-        estados: { nombre: { equals: state, mode: 'insensitive' } },
+      ...(city && {
+        estados: { nombre: { equals: city, mode: 'insensitive' } },
       }),
       ...(search && {
         lugar: { contains: search, mode: 'insensitive' },

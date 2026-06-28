@@ -26,7 +26,7 @@ export class NecesidadesController {
     description: 'Devuelve solo Distrito Capital, La Guaira, Miranda y Falcón.',
   })
   selectEstado() {
-    return this.necesidadesService.selectEstado();
+    return this.necesidadesService.selectCiudad();
   }
 
   @Get('verificados')
