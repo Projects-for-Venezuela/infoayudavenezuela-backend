@@ -13,7 +13,7 @@ export class RefugiosService {
   /**
    * Valida que el estado exista en la base de datos.
    */
-  private async validateEstado(estadoId: string): Promise<void> {
+  async validateEstado(estadoId: string): Promise<void> {
     const estado = await this.databaseService.estados.findUnique({
       where: { id: estadoId },
     });
@@ -28,7 +28,7 @@ export class RefugiosService {
   /**
    * Valida que la ciudad exista y pertenezca al estado indicado.
    */
-  private async validateCiudad(ciudadId: string, estadoId: string): Promise<void> {
+  async validateCiudad(ciudadId: string, estadoId: string): Promise<void> {
     const ciudad = await this.databaseService.ciudades.findUnique({
       where: { id: ciudadId },
       include: { estados: true },
@@ -51,7 +51,7 @@ export class RefugiosService {
   /**
    * Valida que el administrador verificador exista.
    */
-  private async validateVerificadoPor(verificadoPorId: string): Promise<void> {
+  async validateVerificadoPor(verificadoPorId: string): Promise<void> {
     const admin = await this.databaseService.admin_users.findUnique({
       where: { id: verificadoPorId },
     });
@@ -67,7 +67,7 @@ export class RefugiosService {
   /**
    * Valida coherencia entre verificado y verificado_por.
    */
-  private validateVerificadoConsistency(verificado?: boolean, verificadoPor?: string | null): void {
+  validateVerificadoConsistency(verificado?: boolean, verificadoPor?: string | null): void {
     if (verificado === true && !verificadoPor) {
       throw new BadRequestException(
         'Si el refugio está marcado como verificado, debe indicar quién lo verificó (verificado_por).',
@@ -84,7 +84,7 @@ export class RefugiosService {
   /**
    * Ejecuta todas las validaciones de negocio para create/update.
    */
-  private async validateBusinessRules(
+  async validateBusinessRules(
     dto: CreateRefugioDto | UpdateRefugioDto,
     isUpdate = false,
   ): Promise<void> {
@@ -250,7 +250,7 @@ export class RefugiosService {
   /**
    * Maneja errores de Prisma y los traduce a excepciones HTTP descriptivas.
    */
-  private handlePrismaError(error: unknown, operacion: string): never {
+  handlePrismaError(error: unknown, operacion: string): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
         case 'P2002': {

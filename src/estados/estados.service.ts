@@ -13,7 +13,7 @@ export class EstadosService {
   /**
    * Verifica que no exista otro estado con el mismo nombre (case-insensitive).
    */
-  private async validateNombreUnico(nombre: string, excludeId?: string): Promise<void> {
+  async validateNombreUnico(nombre: string, excludeId?: string): Promise<void> {
     const existing = await this.databaseService.estados.findFirst({
       where: {
         nombre: { equals: nombre, mode: 'insensitive' },
@@ -172,7 +172,7 @@ export class EstadosService {
   /**
    * Maneja errores de Prisma y los traduce a excepciones HTTP descriptivas.
    */
-  private handlePrismaError(error: unknown, operacion: string): never {
+  handlePrismaError(error: unknown, operacion: string): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
         case 'P2002': {

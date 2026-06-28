@@ -13,7 +13,7 @@ export class CiudadesService {
   /**
    * Valida que el estado exista en la base de datos.
    */
-  private async validateEstado(estadoId: string): Promise<void> {
+  async validateEstado(estadoId: string): Promise<void> {
     const estado = await this.databaseService.estados.findUnique({
       where: { id: estadoId },
     });
@@ -28,7 +28,7 @@ export class CiudadesService {
   /**
    * Verifica que no exista otra ciudad con el mismo nombre en el mismo estado.
    */
-  private async validateNombreUnicoEnEstado(
+  async validateNombreUnicoEnEstado(
     nombre: string,
     estadoId: string,
     excludeId?: string,
@@ -209,7 +209,7 @@ export class CiudadesService {
   /**
    * Maneja errores de Prisma y los traduce a excepciones HTTP descriptivas.
    */
-  private handlePrismaError(error: unknown, operacion: string): never {
+  handlePrismaError(error: unknown, operacion: string): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
         case 'P2002': {

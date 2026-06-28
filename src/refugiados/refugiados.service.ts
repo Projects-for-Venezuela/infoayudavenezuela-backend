@@ -13,7 +13,7 @@ export class RefugiadosService {
   /**
    * Valida que el refugio exista en la base de datos.
    */
-  private async validateRefugio(refugioId: string): Promise<void> {
+  async validateRefugio(refugioId: string): Promise<void> {
     const refugio = await this.databaseService.refugios.findUnique({
       where: { id: refugioId },
     });
@@ -28,7 +28,7 @@ export class RefugiadosService {
   /**
    * Valida que el administrador verificador exista.
    */
-  private async validateVerificadoPor(verificadoPorId: string): Promise<void> {
+  async validateVerificadoPor(verificadoPorId: string): Promise<void> {
     const admin = await this.databaseService.admin_users.findUnique({
       where: { id: verificadoPorId },
     });
@@ -44,7 +44,7 @@ export class RefugiadosService {
   /**
    * Valida coherencia entre verificado y verificado_por.
    */
-  private validateVerificadoConsistency(verificado?: boolean, verificadoPor?: string | null): void {
+  validateVerificadoConsistency(verificado?: boolean, verificadoPor?: string | null): void {
     if (verificado === true && !verificadoPor) {
       throw new BadRequestException(
         'Si el refugiado está marcado como verificado, debe indicar quién lo verificó (verificado_por).',
@@ -61,7 +61,7 @@ export class RefugiadosService {
   /**
    * Ejecuta todas las validaciones de negocio para create/update.
    */
-  private async validateBusinessRules(dto: CreateRefugiadoDto | UpdateRefugiadoDto): Promise<void> {
+  async validateBusinessRules(dto: CreateRefugiadoDto | UpdateRefugiadoDto): Promise<void> {
     const { refugio_id, verificado, verificado_por } = dto;
 
     if (refugio_id) {
@@ -214,7 +214,7 @@ export class RefugiadosService {
   /**
    * Maneja errores de Prisma y los traduce a excepciones HTTP descriptivas.
    */
-  private handlePrismaError(error: unknown, operacion: string): never {
+  handlePrismaError(error: unknown, operacion: string): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
         case 'P2002': {
