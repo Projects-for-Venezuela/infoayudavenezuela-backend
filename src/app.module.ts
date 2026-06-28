@@ -6,6 +6,8 @@ import { DatabaseModule } from '~/database/database.module';
 import { EstadosModule } from '~/estados/estados.module';
 import { RefugiadosModule } from '~/refugiados/refugiados.module';
 import { RefugiosModule } from '~/refugios/refugios.module';
+import { NoticiasModule } from '~/noticias/noticias.module';
+import { EnlacesAyudaModule } from '~/enlaces-ayuda/enlaces-ayuda.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { RefugiosModule } from '~/refugios/refugios.module';
     CiudadesModule,
     RefugiosModule,
     RefugiadosModule,
+    NoticiasModule,
+    EnlacesAyudaModule,
   ],
 })
 export class AppModule {}
