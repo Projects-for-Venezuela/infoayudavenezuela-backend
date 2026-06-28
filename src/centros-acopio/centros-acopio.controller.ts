@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { CentrosAcopioService } from './centros-acopio.service';
 import { CreateCentrosAcopioDto } from './dto/create-centros-acopio.dto';
 import { UpdateCentrosAcopioDto } from './dto/update-centros-acopio.dto';
+import { PaginationCentrosAcopioDto } from './dto/pagination-centros-acopio.dto';
 
 @Controller('centros-acopio')
 export class CentrosAcopioController {
@@ -13,8 +14,8 @@ export class CentrosAcopioController {
   }
 
   @Get()
-  findAll() {
-    return this.centrosAcopioService.findAll();
+  Pagination(@Query() paginationDto: PaginationCentrosAcopioDto) {
+    return this.centrosAcopioService.pagination(paginationDto);
   }
 
   @Get(':id')
