@@ -30,9 +30,6 @@ model categorias_insumos {
   id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug         String         @unique
   nombre       String
-  icono        String?
-  color        String?
-  orden        Int            @default(0)
   items_insumo items_insumo[]
 }
 
@@ -80,13 +77,6 @@ model ciudades {
   @@index([estado_id], map: "idx_ciudades_estado_id")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model consejos_donacion {
-  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  texto String
-  orden Int    @default(0)
-}
-
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model enlaces_ayuda {
@@ -107,9 +97,6 @@ model enlaces_ayuda {
 model estados {
   id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nombre               String                 @unique
-  colores_bandera      String[]
-  icono                String?
-  slug_bandera         String?
   centros_acopio       centros_acopio[]
   ciudades             ciudades[]
   estados_alias        estados_alias[]
