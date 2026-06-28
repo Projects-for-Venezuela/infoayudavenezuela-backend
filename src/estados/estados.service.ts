@@ -46,7 +46,7 @@ export class EstadosService {
   async pagination(paginationEstadoDto: PaginationEstadoDto) {
     const page = paginationEstadoDto.page ?? 1;
     const limit = paginationEstadoDto.limit ?? 20;
-    const { search } = paginationEstadoDto;
+    const { search, include_ciudad: includeCiudad, include_refugios: includeRefugios } = paginationEstadoDto;
 
     const where: Prisma.estadosWhereInput = {
       ...(search && {
@@ -61,6 +61,18 @@ export class EstadosService {
         take: limit,
         orderBy: { nombre: 'asc' },
         include: {
+          ...(includeCiudad && {
+            ciudades: {
+              select: { id: true, nombre: true },
+              orderBy: { nombre: 'asc' },
+            },
+          }),
+          ...(includeRefugios && {
+            refugios: {
+              select: { id: true, nombre: true },
+              orderBy: { nombre: 'asc' },
+            },
+          }),
           _count: {
             select: { ciudades: true, refugios: true },
           },
@@ -72,13 +84,24 @@ export class EstadosService {
     return PaginationHelper.build(estados, total, page, limit);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, queryDto?: { include_ciudad?: boolean; include_refugios?: boolean }) {
+    const { include_ciudad: includeCiudad, include_refugios: includeRefugios } = queryDto ?? {};
+
     const estado = await this.databaseService.estados.findUnique({
       where: { id },
       include: {
-        ciudades: {
-          orderBy: { nombre: 'asc' },
-        },
+        ...(includeCiudad && {
+          ciudades: {
+            select: { id: true, nombre: true },
+            orderBy: { nombre: 'asc' },
+          },
+        }),
+        ...(includeRefugios && {
+          refugios: {
+            select: { id: true, nombre: true },
+            orderBy: { nombre: 'asc' },
+          },
+        }),
         _count: {
           select: {
             refugios: true,

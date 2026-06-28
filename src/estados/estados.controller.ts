@@ -3,6 +3,7 @@ import { EstadosService } from './estados.service';
 import { CreateEstadoDto } from './dto/create-estado.dto';
 import { UpdateEstadoDto } from './dto/update-estado.dto';
 import { PaginationEstadoDto } from './dto/pagination-estado.dto';
+import { QueryEstadoDto } from './dto/query-estado.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -42,8 +43,8 @@ export class EstadosController {
   @ApiOkResponse({ description: 'Estado encontrado.' })
   @ApiNotFoundResponse({ description: 'Estado no encontrado.' })
   @ApiInternalServerErrorResponse({ description: 'Error interno del servidor.' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.estadosService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @Query() queryDto: QueryEstadoDto) {
+    return this.estadosService.findOne(id, queryDto);
   }
 
   @Put(':id')
