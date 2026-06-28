@@ -30,9 +30,6 @@ model categorias_insumos {
   id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug         String         @unique
   nombre       String
-  icono        String?
-  color        String?
-  orden        Int            @default(0)
   items_insumo items_insumo[]
 }
 
@@ -80,13 +77,6 @@ model ciudades {
   @@index([estado_id], map: "idx_ciudades_estado_id")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model consejos_donacion {
-  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  texto String
-  orden Int    @default(0)
-}
-
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model enlaces_ayuda {
@@ -107,9 +97,6 @@ model enlaces_ayuda {
 model estados {
   id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nombre               String                 @unique
-  colores_bandera      String[]
-  icono                String?
-  slug_bandera         String?
   centros_acopio       centros_acopio[]
   ciudades             ciudades[]
   estados_alias        estados_alias[]
@@ -169,21 +156,33 @@ model items_insumo {
   @@index([categoria_id], map: "idx_items_insumo_categoria_id")
 }
 
+enum CategoriaNecesidad {
+  AGUA_ALIMENTOS
+  MEDICINAS
+  ROPA_COBIJAS
+  HIGIENE
+  HERRAMIENTAS
+  RESCATE
+  ALBERGUE
+  OTROS
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model necesidades_urgentes {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estado_id      String       @db.Uuid
-  ciudad_id      String       @db.Uuid
-  lugar          String
-  direccion      String?
-  que_necesitan  String
-  contacto       String?
-  verificado     Boolean      @default(false)
-  verificado_por String?      @db.Uuid
-  created_at     DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  ciudades       ciudades     @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
-  estados        estados      @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
-  admin_users    admin_users? @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  estado_id           String               @db.Uuid
+  ciudad_id           String               @db.Uuid
+  lugar               String
+  direccion           String?
+  categoria_necesidad CategoriaNecesidad[]
+  que_necesitan       String
+  contacto            String?
+  verificado          Boolean              @default(false)
+  verificado_por      String?              @db.Uuid
+  created_at          DateTime             @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  ciudades            ciudades             @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
+  estados             estados              @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
+  admin_users         admin_users?         @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
 
   @@index([ciudad_id], map: "idx_necesidades_urgentes_ciudad_id")
   @@index([estado_id], map: "idx_necesidades_urgentes_estado_id")
