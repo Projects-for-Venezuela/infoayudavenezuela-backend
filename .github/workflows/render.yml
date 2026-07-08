@@ -24,21 +24,21 @@ jobs:
         image: postgres:17-alpine
 
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nest_db
 
         ports:
           - 5432:5432
 
         options: >-
-          --health-cmd="pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}"
+          --health-cmd="pg_isready -U postgres -d nest_db"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nest_db
 
     steps:
       - name: Checkout repository
@@ -48,18 +48,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.17.1
           run_install: false
-
-      - name: Setup pnpm cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
 
       - name: Verify versions
         run: |
