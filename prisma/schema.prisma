@@ -8,291 +8,325 @@ datasource db {
   provider = "postgresql"
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model admin_users {
-  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                String                 @unique
-  password             String
-  rol                  String                 @default("editor")
-  created_at           DateTime               @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  centros_acopio       centros_acopio[]
-  enlaces_ayuda        enlaces_ayuda[]
-  necesidades_urgentes necesidades_urgentes[]
-  numeros_emergencia   numeros_emergencia[]
-  pacientes            pacientes[]
-  refugiados           refugiados[]
-  refugios             refugios[]
+// ==========================================================================
+// Enums
+// ==========================================================================
+
+enum Role {
+  ADMIN
+  EDITOR
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model categorias_insumos {
-  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug         String         @unique
-  nombre       String
-  items_insumo items_insumo[]
+enum ShelterType {
+  OFFICIAL
+  INFORMAL
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model centros_acopio {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estado_id      String       @db.Uuid
-  ciudad_id      String       @db.Uuid
-  nombre         String
-  direccion      String?
-  contacto       String?
-  hora           String?
-  acepta         String[]     @default([])
-  necesitan      String[]     @default([])
-  zelle          String?
-  pago_movil     String?
-  verificado     Boolean      @default(true)
-  verificado_por String?      @db.Uuid
-  created_at     DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  updated_at     DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  ciudades       ciudades     @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
-  estados        estados      @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
-  admin_users    admin_users? @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
-
-  @@index([ciudad_id], map: "idx_centros_acopio_ciudad_id")
-  @@index([estado_id], map: "idx_centros_acopio_estado_id")
-  @@index([verificado], map: "idx_centros_acopio_verificado")
+enum NewsStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model ciudades {
-  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estado_id            String                 @db.Uuid
-  nombre               String
-  centros_acopio       centros_acopio[]
-  estados              estados                @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
-  hospitales           hospitales[]
-  necesidades_urgentes necesidades_urgentes[]
-  noticias             noticias[]
-  numeros_emergencia   numeros_emergencia[]
-  pacientes            pacientes[]
-  refugios             refugios[]
-
-  @@unique([estado_id, nombre], map: "ciudades_estado_nombre_key")
-  @@index([estado_id], map: "idx_ciudades_estado_id")
+enum SupplyRelationType {
+  ACCEPTED
+  NEEDED
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model enlaces_ayuda {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  titulo         String
-  descripcion    String
-  url            String
-  categoria      String
-  verificado     Boolean      @default(false)
-  verificado_por String?      @db.Uuid
-  created_at     DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  admin_users    admin_users? @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
-
-  @@index([categoria], map: "idx_enlaces_ayuda_categoria")
+enum BloodType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model estados {
-  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre               String                 @unique
-  centros_acopio       centros_acopio[]
-  ciudades             ciudades[]
-  estados_alias        estados_alias[]
-  estados_ayuda        estados_ayuda?
-  necesidades_urgentes necesidades_urgentes[]
-  noticias             noticias[]
-  numeros_emergencia   numeros_emergencia[]
-  pacientes            pacientes[]
-  refugios             refugios[]
+// ==========================================================================
+// Autenticación y usuarios
+// ==========================================================================
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      Role     @default(EDITOR)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  verifiedCollectionCenters CollectionCenter[]
+  verifiedShelters          Shelter[]
+  verifiedUrgentNeeds       UrgentNeed[]
+  verifiedEmergencyNumbers  EmergencyNumber[]
+  verifiedHelpLinks         HelpLink[]
+  verifiedBloodRequests     BloodRequest[]
+
+  @@map("user")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model estados_alias {
-  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  alias     String  @unique
-  estado_id String  @db.Uuid
-  estados   estados @relation(fields: [estado_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model State {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String @unique @db.VarChar(100)
+
+  aidLevel StateAidLevel?
+  cities   City[]
+
+  @@map("state")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model estados_ayuda {
-  estado_id   String   @id @db.Uuid
-  nivel_ayuda String
-  updated_at  DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  estados     estados  @relation(fields: [estado_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model StateAidLevel {
+  stateAidId String   @id @map("state_aid_id") @db.Uuid
+  aidLevel   String   @map("aid_level") @db.VarChar(50)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  state State @relation(fields: [stateAidId], references: [id], onDelete: Cascade)
+
+  @@map("state_aid_level")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model hospitales {
-  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ciudad_id String      @db.Uuid
-  nombre    String
-  ciudades  ciudades    @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
-  pacientes pacientes[]
+model City {
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stateId String @map("state_id") @db.Uuid
+  name    String @db.VarChar(120)
 
-  @@unique([ciudad_id, nombre], map: "hospitales_ciudad_nombre_key")
-  @@index([ciudad_id], map: "idx_hospitales_ciudad_id")
+  state             State              @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  collectionCenters CollectionCenter[]
+  shelters          Shelter[]
+  hospitals         Hospital[]
+  urgentNeeds       UrgentNeed[]
+  news              News[]
+  emergencyNumbers  EmergencyNumber[]
+  bloodRequests     BloodRequest[]
+
+  @@index([stateId, name], map: "city_state_name_key")
+  @@map("city")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model insumos_generales {
-  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre String
-  orden  Int    @default(0)
+// ==========================================================================
+// Centros de acopio, refugios, hospitales
+// ==========================================================================
+
+model CollectionCenter {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId       String   @map("city_id") @db.Uuid
+  name         String   @db.VarChar(200)
+  address      String?  @db.VarChar(300)
+  contact      String?  @db.VarChar(150)
+  scheduledAt  DateTime @map("scheduled_at") @db.Timestamp(6)
+  verified     Boolean  @default(true)
+  verifiedById String?  @map("verified_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  city       City                     @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  verifiedBy User?                    @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+  supplies   CollectionCenterSupply[]
+
+  @@index([cityId, name], map: "city_key_cc")
+  @@index([verified], map: "idx_collection_center_verified")
+  @@map("collection_center")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model items_insumo {
-  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  categoria_id       String             @db.Uuid
-  nombre             String
-  descripcion        String?
-  orden              Int                @default(0)
-  categorias_insumos categorias_insumos @relation(fields: [categoria_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+model Shelter {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId       String      @map("city_id") @db.Uuid
+  name         String      @db.VarChar(200)
+  address      String?     @db.VarChar(300)
+  contact      String?     @db.VarChar(150)
+  capacity     String?     @db.VarChar(50)
+  type         ShelterType @default(OFFICIAL)
+  verified     Boolean     @default(false)
+  verifiedById String?     @map("verified_by_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([categoria_id], map: "idx_items_insumo_categoria_id")
+  city       City            @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  verifiedBy User?           @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+  supplies   ShelterSupply[]
+
+  @@index([cityId, name], map: "city_key_sh")
+  @@index([verified], map: "idx_shelter_verified")
+  @@map("shelter")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model necesidades_urgentes {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estado_id      String       @db.Uuid
-  ciudad_id      String       @db.Uuid
-  lugar          String
-  direccion      String?
-  que_necesitan  String
-  contacto       String?
-  verificado     Boolean      @default(false)
-  verificado_por String?      @db.Uuid
-  created_at     DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  ciudades       ciudades     @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
-  estados        estados      @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
-  admin_users    admin_users? @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
+model Hospital {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId    String   @map("city_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([ciudad_id], map: "idx_necesidades_urgentes_ciudad_id")
-  @@index([estado_id], map: "idx_necesidades_urgentes_estado_id")
+  city City @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@unique([cityId, name], map: "hospital_city_name_key")
+  @@map("hospital")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model noticias {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  titulo      String
-  descripcion String
-  fuente      String?
-  estado_id   String?   @db.Uuid
-  ciudad_id   String?   @db.Uuid
-  estado      String    @default("pendiente")
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  ciudades    ciudades? @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
-  estados     estados?  @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
+model UrgentNeed {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId       String   @map("city_id") @db.Uuid
+  place        String   @db.VarChar(200)
+  address      String?  @db.VarChar(300)
+  neededItems  String   @map("needed_items") @db.Text
+  contact      String?  @db.VarChar(150)
+  verified     Boolean  @default(false)
+  verifiedById String?  @map("verified_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@index([estado_id], map: "idx_noticias_estado_id")
+  city       City  @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  verifiedBy User? @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@index([cityId], map: "idx_urgent_need_city_id")
+  @@map("urgent_need")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model numeros_emergencia {
-  id                      String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estado_id               String?                  @db.Uuid
-  ciudad_id               String?                  @db.Uuid
-  tipo_id                 String?                  @db.Uuid
-  nombre                  String
-  numero                  String?
-  orden                   Int                      @default(0)
-  verificado              Boolean                  @default(true)
-  verificado_por          String?                  @db.Uuid
-  created_at              DateTime                 @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  ciudades                ciudades?                @relation(fields: [ciudad_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  estados                 estados?                 @relation(fields: [estado_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  tipos_numero_emergencia tipos_numero_emergencia? @relation(fields: [tipo_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  admin_users             admin_users?             @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
+// ==========================================================================
+// Solicitudes de sangre
+// ==========================================================================
 
-  @@index([ciudad_id], map: "idx_numeros_emergencia_ciudad_id")
-  @@index([estado_id], map: "idx_numeros_emergencia_estado_id")
-  @@index([tipo_id], map: "idx_numeros_emergencia_tipo_id")
+model BloodRequest {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId       String      @map("city_id") @db.Uuid
+  place        String      @db.VarChar(200)
+  address      String?     @db.VarChar(300)
+  bloodTypes   BloodType[] @map("blood_types")
+  unitsNeeded  Int?        @map("units_needed")
+  contact      String?     @db.VarChar(150)
+  notes        String?     @db.Text
+  verified     Boolean     @default(false)
+  verifiedById String?     @map("verified_by_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  city       City  @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  verifiedBy User? @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@index([cityId], map: "idx_blood_request_city_id")
+  @@index([verified], map: "idx_blood_request_verified")
+  @@map("blood_request")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model pacientes {
-  id                    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estado_id             String       @db.Uuid
-  ciudad_id             String       @db.Uuid
-  hospital_id           String?      @db.Uuid
-  hospital_nombre_libre String?
-  nombre_paciente       String
-  cedula                String?
-  contacto              String?
-  necesitan             String[]     @default([])
-  estatus               String       @default("DESCONOCIDO")
-  verificado            Boolean      @default(false)
-  verificado_por        String?      @db.Uuid
-  created_at            DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  updated_at            DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  ciudades              ciudades     @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
-  estados               estados      @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
-  hospitales            hospitales?  @relation(fields: [hospital_id], references: [id], onUpdate: NoAction)
-  admin_users           admin_users? @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
+// ==========================================================================
+// Noticias, números de emergencia, enlaces de ayuda
+// ==========================================================================
 
-  @@index([ciudad_id], map: "idx_pacientes_ciudad_id")
-  @@index([estado_id], map: "idx_pacientes_estado_id")
-  @@index([hospital_id], map: "idx_pacientes_hospital_id")
+model News {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String     @db.VarChar(250)
+  description String     @db.Text
+  source      String?    @db.VarChar(500)
+  cityId      String?    @map("city_id") @db.Uuid
+  status      NewsStatus @default(PENDING)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  city City? @relation(fields: [cityId], references: [id], onDelete: SetNull)
+
+  @@index([cityId], map: "idx_news_state_id")
+  @@map("news")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model refugiados {
-  id                      String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre_completo         String
-  cedula                  String?
-  telefono                String?
-  refugio_id              String?      @db.Uuid
-  estado_salud            String?
-  necesidades_especificas String?
-  verificado              Boolean      @default(false)
-  verificado_por          String?      @db.Uuid
-  created_at              DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  refugios                refugios?    @relation(fields: [refugio_id], references: [id], onUpdate: NoAction)
-  admin_users             admin_users? @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
+model EmergencyNumber {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId       String?  @map("city_id") @db.Uuid
+  typeId       String?  @map("type_id") @db.Uuid
+  name         String   @db.VarChar(150)
+  number       String?  @db.VarChar(50)
+  displayOrder Int      @default(0) @map("display_order")
+  verified     Boolean  @default(true)
+  verifiedById String?  @map("verified_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@index([refugio_id], map: "idx_refugiados_refugio_id")
+  city       City?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  type       EmergencyNumberType? @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  verifiedBy User?                @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@index([cityId], map: "idx_emergency_number_city_id")
+  @@index([typeId], map: "idx_emergency_number_type_id")
+  @@map("emergency_number")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model refugios {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  estado_id      String       @db.Uuid
-  ciudad_id      String       @db.Uuid
-  nombre         String
-  direccion      String?
-  contacto       String?
-  capacidad      String?
-  acepta         String[]     @default([])
-  necesitan      String[]     @default([])
-  tipo           String       @default("oficial")
-  verificado     Boolean      @default(false)
-  verificado_por String?      @db.Uuid
-  created_at     DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  updated_at     DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  refugiados     refugiados[]
-  ciudades       ciudades     @relation(fields: [ciudad_id], references: [id], onUpdate: NoAction)
-  estados        estados      @relation(fields: [estado_id], references: [id], onUpdate: NoAction)
-  admin_users    admin_users? @relation(fields: [verificado_por], references: [id], onUpdate: NoAction)
+model EmergencyNumberType {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String @unique @db.VarChar(50)
+  name         String @db.VarChar(150)
+  displayOrder Int    @default(0) @map("display_order")
 
-  @@index([ciudad_id], map: "idx_refugios_ciudad_id")
-  @@index([estado_id], map: "idx_refugios_estado_id")
-  @@index([verificado], map: "idx_refugios_verificado")
+  emergencyNumbers EmergencyNumber[]
+
+  @@map("emergency_number_type")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model tipos_numero_emergencia {
-  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug               String               @unique
-  nombre             String
-  orden              Int                  @default(0)
-  numeros_emergencia numeros_emergencia[]
+model HelpLink {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String   @db.VarChar(250)
+  description  String   @db.VarChar(500)
+  url          String   @db.VarChar(2048)
+  category     String   @db.VarChar(80)
+  verified     Boolean  @default(false)
+  verifiedById String?  @map("verified_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  verifiedBy User? @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@index([category], map: "idx_help_link_category")
+  @@map("help_link")
+}
+
+// ==========================================================================
+// Insumos (catálogo + tablas puente)
+// ==========================================================================
+
+model SupplyCategory {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug String @unique @db.VarChar(50)
+  name String @db.VarChar(150)
+
+  supplies GeneralSupply[]
+
+  @@map("supply_category")
+}
+
+model GeneralSupply {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String  @db.VarChar(200)
+  description  String? @db.VarChar(500)
+  displayOrder Int     @default(0) @map("display_order")
+  categoryId   String? @map("category_id") @db.Uuid
+
+  category                 SupplyCategory?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  collectionCenterSupplies CollectionCenterSupply[]
+  shelterSupplies          ShelterSupply[]
+
+  @@index([categoryId], map: "idx_general_supply_category_id")
+  @@map("general_supply")
+}
+
+model CollectionCenterSupply {
+  collectionCenterId String             @map("collection_center_id") @db.Uuid
+  supplyId           String             @map("supply_id") @db.Uuid
+  relation           SupplyRelationType
+
+  collectionCenter CollectionCenter @relation(fields: [collectionCenterId], references: [id], onDelete: Cascade)
+  supply           GeneralSupply    @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+
+  @@id([collectionCenterId, supplyId, relation])
+  @@map("collection_center_supply")
+}
+
+model ShelterSupply {
+  shelterId String             @map("shelter_id") @db.Uuid
+  supplyId  String             @map("supply_id") @db.Uuid
+  relation  SupplyRelationType
+
+  shelter Shelter       @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+  supply  GeneralSupply @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+
+  @@id([shelterId, supplyId, relation])
+  @@map("shelter_supply")
 }

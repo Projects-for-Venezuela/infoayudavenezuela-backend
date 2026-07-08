@@ -1,20 +1,29 @@
-name: Build & Test (Render)
+name: CI
 
 on:
   push:
     branches:
       - main
+      - develop
 
   pull_request:
     branches:
       - main
+      - develop
 
 jobs:
   build:
+    name: Build, Lint & Test
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
+
+    env:
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
       - name: Checkout repository
@@ -24,6 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
 
       - name: Enable Corepack
         run: |
@@ -38,10 +48,42 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Start PostgreSQL
+        run: docker compose up -d
+
+      - name: Wait for PostgreSQL
+        run: |
+          until docker exec postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
       - name: Generate Prisma Client
         run: pnpm prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run Prisma Migrations
+        run: pnpm prisma migrate deploy
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Run ESLint
+        run: pnpm lint:check
+
+      - name: Run Unit Tests
+        run: pnpm test
+
+      #  Pruebas E2E
+      # - name: Run E2E Tests
+      #   run: pnpm test:e2e
 
       - name: Build application
-        run: pnpm run build
+        run: pnpm build
+
+      - name: Show Docker logs
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
