@@ -1,25 +1,41 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import helmet from 'helmet';
-import { AppModule } from '~/app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+
+import '~/common/config/bigint.serializer';
+
+import { AppModule } from '~/app.module';
 import { HttpExceptionFilter } from '~/common/filters/http-exception.filter';
-import { BigIntInterceptor } from '~/common/interceptors/bigint.interceptor';
+import { ACCESS_TOKEN_COOKIE } from '~/auth/services/cookie.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  const port = Number(process.env.PORT ?? 3000);
+
   app.use(helmet());
+  app.use(cookieParser());
+
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
+  app.use(json({ limit: '1mb' }));
+  app.use(urlencoded({ extended: true, limit: '1mb' }));
 
   app.enableCors({
-    origin: true,
+    origin: isProduction
+      ? (process.env.FRONTEND_URL?.split(',').map((origin) => origin.trim()) ?? [])
+      : true,
     credentials: true,
   });
 
   app.setGlobalPrefix('api');
-
   app.enableShutdownHooks();
-  app.useGlobalInterceptors(new BigIntInterceptor());
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -29,24 +45,39 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new HttpExceptionFilter());
+  if (!isProduction) {
+    const config = new DocumentBuilder()
+      .setTitle('InfoAyuda Venezuela API')
+      .setDescription('API REST de InfoAyuda Venezuela')
+      .setVersion('1.0')
+      .addTag('infoayuda')
+      .addCookieAuth(
+        ACCESS_TOKEN_COOKIE,
+        {
+          type: 'apiKey',
+          in: 'cookie',
+          name: ACCESS_TOKEN_COOKIE,
+          description: 'Cookie HttpOnly generada automáticamente al iniciar sesión.',
+        },
+        'cookieAuth',
+      )
+      .build();
 
-  const config = new DocumentBuilder()
-    .setTitle('InfoAyuda Venezuela API')
-    .setDescription('La API de InfoAyuda Venezuela')
-    .setVersion('1.0')
-    .addTag('infoayuda')
-    .build();
+    const document = SwaggerModule.createDocument(app, config);
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+    SwaggerModule.setup('docs', app, document, {
+      swaggerOptions: {
+        withCredentials: true,
+        persistAuthorization: true,
+      },
+    });
 
-  const port = process.env.PORT ?? 3000;
+    console.log(`Swagger: http://localhost:${port}/docs`);
+  }
+
   await app.listen(port);
 
-  console.log(`Application is running on: http://localhost:${port}/api`);
-  console.log(`Global prefix: /api`);
-  console.log(`Swagger: http://localhost:${port}/api`);
+  console.log(`Application running on: http://localhost:${port}/api`);
 }
 
 bootstrap();

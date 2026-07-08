@@ -19,4 +19,12 @@ export class PaginationDto {
   @Type(() => String)
   @IsString()
   search?: string;
+
+  get skip(): number {
+    return (this.page - 1) * this.limit;
+  }
+
+  get take(): number {
+    return this.limit;
+  }
 }

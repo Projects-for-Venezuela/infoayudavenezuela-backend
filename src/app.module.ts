@@ -1,24 +1,21 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
-import { CentrosAcopioModule } from '~/centros-acopio/centros-acopio.module';
-import { CiudadesModule } from '~/ciudades/ciudades.module';
+import { validateEnv } from '~/common/config/env.validation';
 import { DatabaseModule } from '~/database/database.module';
-import { EstadosModule } from '~/estados/estados.module';
-import { RefugiadosModule } from '~/refugiados/refugiados.module';
-import { RefugiosModule } from '~/refugios/refugios.module';
-import { NoticiasModule } from '~/noticias/noticias.module';
-import { EnlacesAyudaModule } from '~/enlaces-ayuda/enlaces-ayuda.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: validateEnv,
     }),
 
     ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         throttlers: [
@@ -31,14 +28,11 @@ import { EnlacesAyudaModule } from '~/enlaces-ayuda/enlaces-ayuda.module';
     }),
 
     DatabaseModule,
-    CentrosAcopioModule,
-    EstadosModule,
-    CiudadesModule,
-    RefugiosModule,
-    RefugiadosModule,
-    NoticiasModule,
-    EnlacesAyudaModule,
+
+    AuthModule,
+
+    UsersModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
-
