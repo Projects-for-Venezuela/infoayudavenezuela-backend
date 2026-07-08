@@ -2,7 +2,9 @@ import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class LoginAuthDto {
-  @Transform(({ value }) => value?.trim().toLowerCase())
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsNotEmpty({
     message: 'El correo electrónico es obligatorio.',
   })
@@ -20,7 +22,7 @@ export class LoginAuthDto {
   })
   email?: string;
 
-  @Transform(({ value }) => value?.trim())
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   @IsNotEmpty({
     message: 'La contraseña es obligatoria.',
   })
@@ -33,7 +35,7 @@ export class LoginAuthDto {
   @MaxLength(64, {
     message: 'La contraseña no puede superar los 64 caracteres.',
   })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_\-])[A-Za-z\d@$!%*?&.#_\-]+$/, {
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-])[A-Za-z\d@$!%*?&.#_-]+$/, {
     message:
       'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número y un carácter especial.',
   })

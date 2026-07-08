@@ -9,7 +9,7 @@ import { AuthenticatedUser } from '~/auth/interfaces/authenticated-user.interfac
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -20,12 +20,15 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const user = request.user as AuthenticatedUser | undefined;
 
-    if (!user) throw new UnauthorizedException('Usuario no autenticado.');
+    if (!user) {
+      throw new UnauthorizedException('Usuario no autenticado.');
+    }
 
     switch (user.role) {
       case Role.ADMIN:
       case Role.EDITOR:
         return true;
+
       default:
         throw new UnauthorizedException('No tienes permisos para acceder a este recurso.');
     }

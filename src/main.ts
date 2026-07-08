@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { json, urlencoded } from 'express';
+import { json, urlencoded, type Express } from 'express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
@@ -11,7 +11,7 @@ import { AppModule } from '~/app.module';
 import { HttpExceptionFilter } from '~/common/filters/http-exception.filter';
 import { ACCESS_TOKEN_COOKIE } from '~/auth/services/cookie.service';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
   const isProduction = process.env.NODE_ENV === 'production';
@@ -20,7 +20,9 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
 
-  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  const server = app.getHttpAdapter().getInstance() as Express;
+
+  server.set('trust proxy', 1);
 
   app.use(json({ limit: '1mb' }));
   app.use(urlencoded({ extended: true, limit: '1mb' }));
@@ -80,4 +82,4 @@ async function bootstrap() {
   console.log(`Application running on: http://localhost:${port}/api`);
 }
 
-bootstrap();
+void bootstrap();

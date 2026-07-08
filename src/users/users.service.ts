@@ -3,7 +3,7 @@ import { DatabaseService } from '~/database/database.service';
 import { ResponseHelper } from '~/common/response/response.helper';
 import { PaginationUserDto } from '~/users/dto/request/pagination-user.dto';
 import * as argon2 from 'argon2';
-import { Prisma, User, Role } from 'generated/prisma/client';
+import { Prisma, Role } from 'generated/prisma/client';
 import { CreateUserDto } from '~/users/dto/request/create-user.dto';
 import { UpdateUserDto } from '~/users/dto/request/update-user.dto';
 import { PaginationHelper } from '~/common/pagination/pagination';
@@ -22,7 +22,7 @@ export class UsersService {
 
     if (emailExists) throw new ConflictException('El correo electrónico ya está registrado.');
 
-    const hashedPassword = await argon2.hash(password!);
+    const hashedPassword = await argon2.hash(password);
 
     await this.databaseServices.user.create({
       data: { ...createUserDto, password: hashedPassword, role: role ?? Role.EDITOR },
